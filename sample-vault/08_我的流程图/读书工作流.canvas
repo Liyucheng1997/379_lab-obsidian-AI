@@ -1,0 +1,93 @@
+{
+  "nodes": [
+    {
+      "id": "a",
+      "type": "text",
+      "text": "## 闪念\n读书时随手记下的想法\n→ 00_闪念收集箱",
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 140,
+      "color": "1"
+    },
+    {
+      "id": "b",
+      "type": "text",
+      "text": "## 文献笔记\n用自己的话复述书中观点\n→ 01_书籍电影分类",
+      "x": 340,
+      "y": 0,
+      "width": 260,
+      "height": 140,
+      "color": "4"
+    },
+    {
+      "id": "c",
+      "type": "text",
+      "text": "## 永久卡片\n一张卡片一个概念\n→ 02_永久知识卡片盒",
+      "x": 680,
+      "y": 0,
+      "width": 260,
+      "height": 140,
+      "color": "5"
+    },
+    {
+      "id": "d",
+      "type": "file",
+      "file": "02_永久知识卡片盒/02_概念类/费曼学习法.md",
+      "x": 680,
+      "y": 220,
+      "width": 300,
+      "height": 260
+    },
+    {
+      "id": "e",
+      "type": "text",
+      "text": "## 输出\n公众号 / 小红书文章\n→ 05_输出文章",
+      "x": 1020,
+      "y": 0,
+      "width": 260,
+      "height": 140,
+      "color": "6"
+    },
+    {
+      "id": "g",
+      "type": "group",
+      "label": "卡片笔记流水线",
+      "x": -30,
+      "y": -50,
+      "width": 1340,
+      "height": 560
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "a",
+      "fromSide": "right",
+      "toNode": "b",
+      "toSide": "left"
+    },
+    {
+      "id": "e2",
+      "fromNode": "b",
+      "fromSide": "right",
+      "toNode": "c",
+      "toSide": "left"
+    },
+    {
+      "id": "e3",
+      "fromNode": "c",
+      "fromSide": "right",
+      "toNode": "e",
+      "toSide": "left",
+      "label": "费曼式复述"
+    },
+    {
+      "id": "e4",
+      "fromNode": "c",
+      "fromSide": "bottom",
+      "toNode": "d",
+      "toSide": "top"
+    }
+  ]
+}

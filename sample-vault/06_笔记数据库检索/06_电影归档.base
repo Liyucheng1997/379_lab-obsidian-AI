@@ -1,0 +1,32 @@
+views:
+  - type: cards
+    name: 01_我看过的电影
+    filters:
+      or:
+        - 电影 == "欣赏完成"
+    groupBy:
+      property: 电影类型
+      direction: ASC
+    sort:
+      - property: date
+        direction: DESC
+    image: note.cover
+    imageFit: contain
+    imageAspectRatio: 0.7
+    cardSize: 130
+  - type: cards
+    name: 02_一起看的电影
+    filters:
+      and:
+        - 电影 == "共同欣赏"
+    image: note.cover
+    imageAspectRatio: 0.7
+    cardSize: 130
+  - type: cards
+    name: 03_心愿电影
+    filters:
+      and:
+        - 电影 == "心愿电影"
+    image: note.cover
+    imageAspectRatio: 0.7
+    cardSize: 130

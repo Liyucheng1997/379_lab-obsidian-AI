@@ -1,0 +1,92 @@
+{
+  "cascadeColors": false,
+  "colorBackground": true,
+  "palette": [
+    {
+      "id": "c0",
+      "name": "Red",
+      "value": "#fe4365"
+    },
+    {
+      "id": "c1",
+      "name": "Green",
+      "value": "#407334"
+    },
+    {
+      "id": "c2",
+      "name": "Blue",
+      "value": "#26bcd5"
+    },
+    {
+      "id": "c3",
+      "name": "Orange",
+      "value": "#f8931d"
+    },
+    {
+      "id": "c4",
+      "name": "Purple",
+      "value": "#8239ff"
+    },
+    {
+      "id": "c5",
+      "name": "Yellow",
+      "value": "#f4d000"
+    },
+    {
+      "id": "c6",
+      "name": "StrongBlue",
+      "value": "#14446a"
+    },
+    {
+      "id": "c7",
+      "name": "StrongGreen",
+      "value": "#20df63"
+    }
+  ],
+  "fileColors": [
+    {
+      "path": "00_闪念收集箱",
+      "color": "c0"
+    },
+    {
+      "path": "01_书籍电影分类",
+      "color": "c1"
+    },
+    {
+      "path": "02_永久知识卡片盒",
+      "color": "c2"
+    },
+    {
+      "path": "03_模板文件库",
+      "color": "c3"
+    },
+    {
+      "path": "04_图片附件库",
+      "color": "c7"
+    },
+    {
+      "path": "05_输出文章",
+      "color": "c4"
+    },
+    {
+      "path": "06_笔记数据库检索",
+      "color": "c0"
+    },
+    {
+      "path": "07_Kindle笔记同步",
+      "color": "c6"
+    },
+    {
+      "path": "08_我的流程图",
+      "color": "c7"
+    },
+    {
+      "path": "09_古籍阅读",
+      "color": "c2"
+    },
+    {
+      "path": "10_Excalidraw",
+      "color": "c5"
+    }
+  ]
+}

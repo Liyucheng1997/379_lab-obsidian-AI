@@ -1,0 +1,14 @@
+{
+  "name": "ai-obsidian-web",
+  "version": "1.0.0",
+  "description": "开箱即用的网页版 Obsidian：直接读写本地仓库，内置大模型 AI 助手",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node scripts/seed.js --force"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

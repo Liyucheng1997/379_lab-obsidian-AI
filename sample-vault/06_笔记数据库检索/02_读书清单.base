@@ -1,0 +1,99 @@
+views:
+  - type: cards
+    name: Neatreader正在阅读
+    filters:
+      and:
+        - states == "Neatreader正在阅读"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain
+  - type: cards
+    name: NeatReader心愿书单
+    filters:
+      and:
+        - states == "Neatreader心愿书单"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain
+  - type: cards
+    name: Kindle正在阅读
+    filters:
+      and:
+        - states == "Kindle正在阅读"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain
+  - type: cards
+    name: Kindle心愿书单
+    filters:
+      and:
+        - states == "Kindle心愿书单"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain
+  - type: cards
+    name: AI辅助心愿清单
+    filters:
+      and:
+        - states == "AI辅助心愿清单"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain
+  - type: cards
+    name: AI辅助正在阅读
+    filters:
+      and:
+        - states == "AI辅助正在阅读"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain
+  - type: cards
+    name: 阅读归档
+    filters:
+      and:
+        - states == "阅读完成"
+    order:
+      - file.name
+    sort:
+      - property: date
+        direction: DESC
+    cardSize: 140
+    imageAspectRatio: 0.7
+    image: note.cover
+    imageFit: contain

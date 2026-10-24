@@ -1,0 +1,35 @@
+views:
+  - type: cards
+    name: 01_公众号草稿
+    filters:
+      and:
+        - 类型 == "输出文章"
+        - 平台 == "公众号"
+        - 状态 == "草稿"
+    order:
+      - file.name
+      - date
+    cardSize: 160
+    image: note.cover
+  - type: cards
+    name: 02_公众号发布
+    filters:
+      and:
+        - 类型 == "输出文章"
+        - 平台 == "公众号"
+        - 状态 == "已发布"
+    order:
+      - file.name
+      - date
+    cardSize: 160
+    image: note.cover
+  - type: table
+    name: 03_全部文章
+    filters:
+      and:
+        - 类型 == "输出文章"
+    order:
+      - file.name
+      - 状态
+      - 平台
+      - date

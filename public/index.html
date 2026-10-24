@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light" data-scheme="glass">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 版 Obsidian</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M16 6l8 5v10l-8 5-8-5V11z' fill='none' stroke='white' stroke-width='2.2' stroke-linejoin='round'/%3E%3Cpath d='M16 6v20M8 11l16 10' stroke='white' stroke-width='1.6' opacity='.6'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="vendor/js-yaml.min.js"></script>
+  <script src="vendor/marked.umd.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="workspace-row">
+      <nav id="ribbon" class="ribbon"></nav>
+      <aside id="left" class="sidebar sidebar-left">
+        <div id="leftTabs" class="side-tabs"></div>
+        <div id="leftBody" class="side-body"></div>
+        <button id="vaultBtn" class="vault-btn" title="切换仓库"></button>
+      </aside>
+      <div class="resizer" data-side="left"></div>
+      <main class="workspace">
+        <div id="tabbar" class="tabbar"></div>
+        <div id="viewHost" class="view-host"></div>
+        <footer id="status" class="statusbar"></footer>
+      </main>
+      <div class="resizer" data-side="right"></div>
+      <aside id="right" class="sidebar sidebar-right">
+        <div id="rightTabs" class="side-tabs"></div>
+        <div id="rightBody" class="side-body"></div>
+      </aside>
+    </div>
+  </div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

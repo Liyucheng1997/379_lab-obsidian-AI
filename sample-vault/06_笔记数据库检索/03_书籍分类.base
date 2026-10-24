@@ -1,0 +1,181 @@
+views:
+  - type: kanban
+    name: 01_哲学政治
+    filters:
+      and:
+        - 书籍 == "哲学政治"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 02_学习思考
+    filters:
+      and:
+        - 书籍 == "学习思考"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 03_地理历史
+    filters:
+      and:
+        - 书籍 == "地理历史"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 04_基础学科
+    filters:
+      and:
+        - 书籍 == "基础学科"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 05_人物传记
+    filters:
+      and:
+        - 书籍 == "人物传记"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 06_科学技术
+    filters:
+      and:
+        - 书籍 == "科学技术"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 07_中国古书
+    filters:
+      and:
+        - 书籍 == "中国古书"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 08_经济法律
+    filters:
+      and:
+        - 书籍 == "经济法律"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 09_医学书籍
+    filters:
+      and:
+        - 书籍 == "医学书籍"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 10_艺术书籍
+    filters:
+      and:
+        - 书籍 == "艺术书籍"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 11_文学小说
+    filters:
+      and:
+        - 书籍 == "文学小说"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200
+  - type: kanban
+    name: 13_自然世界
+    filters:
+      and:
+        - 书籍 == "自然世界"
+    groupBy:
+      property: states
+      direction: ASC
+    order:
+      - file.name
+      - date
+    cardSize: 130
+    image: note.cover
+    imageAspectRatio: 0.7
+    columnWidth: 200

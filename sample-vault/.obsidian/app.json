@@ -1,0 +1,11 @@
+{
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "attachmentFolderPath": "04_图片附件库",
+  "trashOption": "local",
+  "promptDelete": false,
+  "newFileFolderPath": "00_闪念收集箱",
+  "readableLineLength": true,
+  "strictLineBreaks": false,
+  "propertiesInDocument": "visible"
+}

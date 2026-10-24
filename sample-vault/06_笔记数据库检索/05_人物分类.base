@@ -1,0 +1,108 @@
+views:
+  - type: cards
+    name: 01_全部人物
+    filters:
+      and:
+        - 类型 == "人物"
+    groupBy:
+      property: 研究领域
+      direction: ASC
+    order:
+      - file.name
+      - 研究领域
+    sort:
+      - property: file.basename
+        direction: ASC
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 02_政治军事
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "政治军事"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 03_哲学思想
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "哲学思想"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 04_宗教神话
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "宗教神话"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 05_文学历史
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "文学历史"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 06_科学技术
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "科学技术"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 07_商业管理
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "商业管理"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 08_教育学术
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "教育学术"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: cards
+    name: 09_影视创作
+    filters:
+      and:
+        - 类型 == "人物"
+        - 研究领域 == "影视创作"
+    order:
+      - file.name
+    image: note.cover
+    cardSize: 120
+  - type: table
+    name: 99_人物总表
+    filters:
+      and:
+        - 类型 == "人物"
+    order:
+      - file.name
+      - 研究领域
+      - 人物性质
+      - 人物关系
+      - date

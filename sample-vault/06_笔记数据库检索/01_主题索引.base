@@ -1,0 +1,8 @@
+views:
+  - type: cards
+    name: 主题索引
+    filters:
+      and:
+        - 类型 == "主题"
+    image: note.cover
+    cardSize: 140

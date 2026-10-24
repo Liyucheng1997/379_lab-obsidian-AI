@@ -1,0 +1,31 @@
+views:
+  - type: cards
+    name: 01_说文解字
+    filters:
+      and:
+        - file.name.length == 1
+    cardSize: 100
+  - type: cards
+    name: 02_双字笔记
+    filters:
+      and:
+        - file.name.length == 2
+    cardSize: 100
+  - type: cards
+    name: 03_三字笔记
+    filters:
+      and:
+        - file.name.length == 3
+    cardSize: 100
+  - type: cards
+    name: 04_四字笔记
+    filters:
+      and:
+        - file.name.length == 4
+    cardSize: 100
+  - type: cards
+    name: 05_五字笔记
+    filters:
+      and:
+        - file.name.length == 5
+    cardSize: 100
