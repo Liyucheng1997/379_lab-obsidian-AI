@@ -385,10 +385,17 @@ function toggleTheme() {
 // ---------- 仓库 ----------
 app.refreshMeta = async () => { app.meta = await api.info(); renderVaultBtn(); return app.meta; };
 app.refreshAIStatus = async () => { try { aiPanel.setStatus(await api.settings()); } catch { } };
-app.switchVault = async path => {
+app.switchVault = async target => {
   try {
-    for (const t of tabs) t.view.destroy?.();
-    await api.openVault(path);
+    if (api.mode === 'browser') {
+      // 纯前端模式：先弹出选择文件夹（必须紧跟用户点击），取消则保持原样
+      const r = await api.openVault(target);
+      if (r?.cancelled) return;
+      for (const t of tabs) t.view.destroy?.();
+    } else {
+      for (const t of tabs) t.view.destroy?.();
+      await api.openVault(target);
+    }
     store.set('tabs', null); store.set('expanded', []);
     location.reload();
   } catch (e) { toast(e.message, 'error'); }

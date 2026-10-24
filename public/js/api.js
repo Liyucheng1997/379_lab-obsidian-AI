@@ -1,4 +1,5 @@
-// 与本地服务通信 + 客户端链接解析索引
+// 仓库接口 + 客户端链接解析索引
+// 有本地服务（node server.js）时走 /api；没有时（GitHub Pages 等静态托管）切换到纯前端模式 backend/local.js，两者接口相同
 import { basename, dirname, extname, bus } from './util.js';
 
 async function req(method, url, body) {
@@ -13,7 +14,8 @@ async function req(method, url, body) {
 }
 const qs = o => new URLSearchParams(Object.entries(o).filter(([, v]) => v != null)).toString();
 
-export const api = {
+const httpApi = {
+  mode: 'server',
   info: () => req('GET', '/api/info'),
   tree: (dir, offset = 0, limit = 400) => req('GET', '/api/tree?' + qs({ dir, offset, limit })),
   read: path => req('GET', '/api/file?' + qs({ path })),
@@ -73,6 +75,13 @@ export const api = {
     return { abort: () => ctrl.abort(), done };
   },
 };
+
+// 本地服务只监听 127.0.0.1，其他域名（如 GitHub Pages）直接进入纯前端模式，不发探测请求
+async function hasServer() {
+  if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return false;
+  try { const r = await fetch('/api/info', { cache: 'no-store' }); return r.headers.get('x-ai-obsidian') === '1'; } catch { return false; }
+}
+export const api = (await hasServer()) ? httpApi : await (await import('./backend/local.js')).createLocalApi();
 
 // ---------- 名称索引（双链补全、快速切换、链接解析） ----------
 export const index = {

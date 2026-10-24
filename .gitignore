@@ -5,3 +5,6 @@ node_modules/
 # 本机开发配置
 .claude/
 sample-vault/.trash/
+
+# 纯前端版构建产物（node scripts/build-pages.js）
+dist/

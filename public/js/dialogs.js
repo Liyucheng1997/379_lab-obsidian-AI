@@ -200,7 +200,9 @@ function aiPane(s) {
   if (presets[ai.provider]?.kind === 'anthropic') tempRow.style.display = 'none';
   return h('div', null,
     h('h3', { class: 'set-title' }, 'AI 模型'),
-    h('p', { class: 'set-desc', style: { marginTop: 0 } }, 'API Key 只保存在本机的 config.json 中，请求经由本地服务转发，不会出现在浏览器里。支持 DeepSeek、Claude、OpenAI、Kimi、通义千问、智谱、硅基流动、Ollama 以及任意 OpenAI 兼容接口。'),
+    h('p', { class: 'set-desc', style: { marginTop: 0 } }, s.mode === 'browser'
+      ? 'API Key 只保存在本浏览器（localStorage），请求由浏览器直接发给服务商，不经过任何中间服务器。Claude、DeepSeek、OpenAI、Kimi、通义千问、硅基流动支持浏览器直接调用；Ollama 需设置环境变量 OLLAMA_ORIGINS；智谱等不允许跨域的服务商请改用本地服务模式（node server.js）。请不要在公共电脑上保存 Key。'
+      : 'API Key 只保存在本机的 config.json 中，请求经由本地服务转发，不会出现在浏览器里。支持 DeepSeek、Claude、OpenAI、Kimi、通义千问、智谱、硅基流动、Ollama 以及任意 OpenAI 兼容接口。'),
     row('服务商', null, provider),
     row('API 地址', '留空使用服务商默认地址', baseUrl),
     row('API Key', null, key),
@@ -211,6 +213,7 @@ function aiPane(s) {
 }
 
 function vaultPane(s) {
+  if (s.mode === 'browser') return vaultPaneBrowser(s);
   const input = h('input', { class: 'input', value: s.vaultPath, style: { flex: 1 } });
   const open = h('button', { class: 'btn btn-primary' }, '打开');
   open.onclick = () => app.switchVault(input.value.trim());
@@ -224,6 +227,29 @@ function vaultPane(s) {
     row('当前仓库', `${st.total || 0} 个文件 · 索引耗时 ${((st.ms || 0) / 1000).toFixed(1)} 秒`, h('code', { class: 'path-code' }, s.vaultPath)),
     h('div', { class: 'set-block' }, h('div', { class: 'set-label' }, '打开本地 Obsidian 仓库'), h('div', { class: 'set-desc' }, '填写仓库文件夹的完整路径（包含 .obsidian 的那一层），例如 D:\\Obsidian\\我的知识库\\读书笔记。会读取仓库里的模板、文件夹配色和 Bases 视图。'), h('div', { class: 'form-row', style: { marginTop: '8px' } }, input, open)),
     s.recentVaults?.length ? h('div', { class: 'set-block' }, h('div', { class: 'set-label' }, '最近打开'), ...s.recentVaults.map(p => { const b = h('button', { class: 'recent-vault' }, icon('vault', 15), p); b.onclick = () => app.switchVault(p); return b; })) : null,
+    h('div', { class: 'set-actions' }, sample, reindex));
+}
+
+// 纯前端模式：用浏览器的文件夹授权打开仓库
+function vaultPaneBrowser(s) {
+  const pick = h('button', { class: 'btn btn-primary' }, '选择文件夹…');
+  pick.onclick = () => app.switchVault('pick');
+  const imp = h('button', { class: 'btn btn-primary' }, '导入文件夹…');
+  imp.onclick = () => app.switchVault('import');
+  const reindex = h('button', { class: 'btn' }, icon('refresh', 14), '重建索引');
+  reindex.onclick = async () => { await api.reindex(); toast('正在重建索引…'); setTimeout(() => app.reloadAll(), 1500); };
+  const sample = h('button', { class: 'btn' }, '使用示例仓库');
+  sample.onclick = () => app.switchVault('sample');
+  const st = app.meta.status || {};
+  return h('div', null,
+    h('h3', { class: 'set-title' }, '仓库'),
+    row('当前仓库', `${st.total || 0} 个文件 · 索引耗时 ${((st.ms || 0) / 1000).toFixed(1)} 秒`, h('code', { class: 'path-code' }, s.vaultPath)),
+    h('div', { class: 'set-block' }, h('div', { class: 'set-label' }, '打开本地 Obsidian 仓库'),
+      h('div', { class: 'set-desc' }, s.canPick
+        ? '选择仓库文件夹（包含 .obsidian 的那一层）。浏览器会询问是否允许编辑，同意后笔记直接保存回这个文件夹；以后打开网页时再点一次确认即可。'
+        : '当前浏览器不能直接读写本地文件夹（需要 Chrome 或 Edge）。可以把文件夹导入为浏览器内的副本：能浏览和编辑，但修改只保存在本浏览器里，不会写回原文件夹。'),
+      h('div', { class: 'form-row', style: { marginTop: '8px' } }, s.canPick ? pick : imp)),
+    s.recentVaults?.length ? h('div', { class: 'set-block' }, h('div', { class: 'set-label' }, '最近打开'), ...s.recentVaults.map((name, i) => { const b = h('button', { class: 'recent-vault' }, icon('vault', 15), name); b.onclick = () => app.switchVault(i); return b; })) : null,
     h('div', { class: 'set-actions' }, sample, reindex));
 }
 

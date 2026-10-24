@@ -1,6 +1,6 @@
 // Obsidian Bases（.base）解析与求值：filters / sort / groupBy / cards / table / kanban
-const yaml = require('../public/vendor/js-yaml.min.js');
-const { collator, dirOf } = require('./vault');
+import { deps } from './deps.js';
+import { collator, dirOf } from './vault.js';
 
 // ---------- 表达式：词法 + Pratt 解析 ----------
 function tokenize(src) {
@@ -261,7 +261,7 @@ function resolveImage(v, e, vault) {
 
 function loadBase(text) {
   let def;
-  try { def = yaml.load(text) || {}; } catch (err) { throw Object.assign(new Error('Base 文件 YAML 解析失败：' + err.message), { status: 400 }); }
+  try { def = deps.yaml.load(text) || {}; } catch (err) { throw Object.assign(new Error('Base 文件 YAML 解析失败：' + err.message), { status: 400 }); }
   if (!Array.isArray(def.views) || !def.views.length) def.views = [{ type: 'table', name: '表格' }];
   return def;
 }
@@ -313,4 +313,4 @@ function runView(def, viewIdx, vault, opts = {}) {
   };
 }
 
-module.exports = { loadBase, runView, parse, evaluate };
+export { loadBase, runView, parse, evaluate };

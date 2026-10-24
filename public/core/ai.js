@@ -1,5 +1,5 @@
-// AI 代理：OpenAI 兼容接口（DeepSeek / Kimi / 通义 / 智谱 / 硅基流动 / Ollama …）与 Anthropic Claude
-// 浏览器只和本地服务通信，API Key 只保存在本机 config.json，不经过前端。
+// AI 接口：OpenAI 兼容接口（DeepSeek / Kimi / 通义 / 智谱 / 硅基流动 / Ollama …）与 Anthropic Claude
+// 本地服务模式下由 Node 转发（Key 存在 config.json）；纯前端模式下浏览器直接请求（Key 存在 localStorage）。
 
 const PRESETS = {
   deepseek: { label: 'DeepSeek', kind: 'openai', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
@@ -20,9 +20,12 @@ function trimSlash(u) { return String(u || '').replace(/\/+$/, ''); }
 
 async function* sseLines(body) {
   const decoder = new TextDecoder();
+  const reader = body.getReader();
   let buf = '';
-  for await (const chunk of body) {
-    buf += decoder.decode(chunk, { stream: true });
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
     let i;
     while ((i = buf.indexOf('\n')) >= 0) {
       const line = buf.slice(0, i).replace(/\r$/, '');
@@ -56,6 +59,8 @@ async function streamChat(cfg, { system, messages, maxTokens }, onText, signal) 
       'content-type': 'application/json',
       'x-api-key': cfg.apiKey,
       'anthropic-version': '2026-10-21',
+      // 纯前端模式由浏览器直接调用；Node 转发时这个头不起作用
+      'anthropic-dangerous-direct-browser-access': 'true',
     };
     const body = { model, max_tokens: max, stream: true, messages };
     if (system) body.system = system;
@@ -102,4 +107,4 @@ async function streamChat(cfg, { system, messages, maxTokens }, onText, signal) 
   return { stopReason };
 }
 
-module.exports = { PRESETS, streamChat };
+export { PRESETS, streamChat };

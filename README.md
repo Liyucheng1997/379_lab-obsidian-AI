@@ -3,7 +3,22 @@
 开箱即用的网页版 Obsidian：在浏览器里直接读写本地 Obsidian 仓库，并内置大模型 AI 助手。
 仓库结构、卡片模板、分类方式参照「读书笔记」仓库（`D:\Obsidian\Yucheng的知识体系\读书笔记`）；界面风格取自个人网站 liyucheng.me（玻璃质感 + 墨黑胶囊 + 燃烧橙点缀），并保留 Blue Topaz 主题的特征。
 
-## 快速开始
+**在线使用：<https://liyucheng1997.github.io/379_lab-obsidian-AI/>**（纯前端，无需安装）
+
+## 两种用法
+
+| | 在线版（纯前端） | 本地服务版 |
+| --- | --- | --- |
+| 启动 | 打开上面的网址 | `node server.js` |
+| 打开仓库 | 「设置 → 仓库 → 选择文件夹」，浏览器授权后直接读写本地文件夹 | 填写仓库路径，或 `--vault` 参数 |
+| 浏览器 | 读写本地文件夹需要 Chrome / Edge；其他浏览器只能把文件夹导入为浏览器内副本 | 任意现代浏览器 |
+| API Key | 保存在本浏览器（localStorage），浏览器直接请求服务商 | 保存在本机 `config.json`，经本地服务转发 |
+| AI 服务商 | Claude、DeepSeek、OpenAI、Kimi、通义千问、硅基流动；Ollama 需设置 `OLLAMA_ORIGINS`；智谱不允许浏览器跨域调用 | 全部支持 |
+| 外部修改 | 窗口重新获得焦点时比对修改时间 | 实时监听文件变化 |
+
+两种模式共用同一套代码（`public/core/`），界面和功能一致。没有选文件夹时，在线版载入内置的示例仓库，存在浏览器的私有存储（OPFS）里，可以随意编辑。
+
+## 本地服务版
 
 只需要 Node.js 18+，**无需 npm install**（所有依赖已内置在 `public/vendor/`）。
 
@@ -56,7 +71,7 @@ node server.js --vault "D:\Obsidian\Yucheng的知识体系\读书笔记"
 - **AI 写卡片**：输入一个概念名，AI 按六段卡片模板流式写入整张卡片
 - **Ctrl+J**：改写选中的文字（润色、去 AI 味、扩写、翻译…），或在光标处生成内容
 - 支持 DeepSeek、Claude、OpenAI、Kimi、通义千问、智谱、硅基流动、Ollama（本地）以及任意 OpenAI 兼容接口
-- API Key 只保存在本机的 `config.json`，浏览器通过本地服务转发请求，Key 不会出现在前端
+- 本地服务版的 API Key 只保存在本机的 `config.json`，浏览器通过本地服务转发请求，Key 不会出现在前端；在线版的 Key 只保存在本浏览器
 
 ## 外观
 
@@ -83,19 +98,21 @@ node server.js --vault "D:\Obsidian\Yucheng的知识体系\读书笔记"
 
 - Bases：支持常用的表达式（`==`、`!=`、比较运算、`&&`、`||`、`file.name`、`file.inFolder()`、`file.hasTag()`、`.contains()`、`.length` 等），map 视图以表格形式展示
 - Dataview 代码块只显示源码，不执行；Excalidraw 文件不渲染；Canvas 只能浏览，不能编辑
-- 服务只监听 127.0.0.1，局域网内的其他设备无法访问
+- 本地服务只监听 127.0.0.1，局域网内的其他设备无法访问
+- 在线版第一次打开本地文件夹时，浏览器会询问是否允许编辑；之后每次打开网页需要再点一次「继续打开」确认（浏览器的安全要求）
 
 ## 目录结构
 
 ```
 server.js            本地服务：静态文件、仓库 API、AI 转发
-lib/vault.js         仓库索引（frontmatter、双链、反链、标签、搜索、检索）
-lib/bases.js         .base 解析与表达式求值
-lib/ai.js            各家模型的流式接口适配
+lib/node-fs.js       Node 文件系统适配器
 public/              前端（原生 ES 模块，无需构建）
+  core/              前后端共用：仓库索引 vault.js、Bases 求值 bases.js、模型接口 ai.js、仓库接口 service.js
+  js/backend/        纯前端模式：浏览器文件夹适配器、IndexedDB、本地接口实现
   vendor/            CodeMirror 6 打包文件、marked、js-yaml、Sora 字体
   css/tokens.css     苹果式设计变量
   css/app.css        界面样式（含秋日 Topaz 配色）
   js/                工作区、编辑器、视图、面板、AI
 sample-vault/        示例仓库（node scripts/seed.js --force 可重新生成）
+scripts/build-pages.js  生成在线版 dist/（public/ + 示例仓库清单），推送 main 后由 GitHub Actions 部署到 Pages
 ```

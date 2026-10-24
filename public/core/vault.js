@@ -1,8 +1,6 @@
 // 仓库索引：扫描 Markdown / 附件，解析 frontmatter、双链、标签，维护反向链接
-const fs = require('fs');
-const fsp = fs.promises;
-const path = require('path');
-const yaml = require('../public/vendor/js-yaml.min.js');
+// 读写磁盘全部经由 fs 适配器（Node：lib/node-fs.js；浏览器：js/backend/handle-fs.js），路径一律是仓库内的相对路径（/ 分隔）
+import { deps } from './deps.js';
 
 const IGNORE_DIRS = new Set(['.obsidian', '.trash', '.git', 'node_modules', '.claude', '.claudian', '.vscode']);
 const MD_EXT = new Set(['md']);
@@ -12,17 +10,26 @@ const LINK_RE = /!?\[\[([^\[\]\|#\^]*)(#[^\[\]\|]*)?(\|[^\[\]]*)?\]\]/g;
 const TAG_RE = /(?:^|[\s(（，。,;；])#([\p{L}\p{N}_\-\/]*[\p{L}_\-\/][\p{L}\p{N}_\-\/]*)/gu;
 const collator = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' });
 
-function toPosix(p) { return p.split(path.sep).join('/'); }
 function extOf(name) { const i = name.lastIndexOf('.'); return i > 0 ? name.slice(i + 1).toLowerCase() : ''; }
 function baseOf(name) { const i = name.lastIndexOf('.'); return i > 0 ? name.slice(0, i) : name; }
 function dirOf(p) { const i = p.lastIndexOf('/'); return i >= 0 ? p.slice(0, i) : ''; }
+function fileOf(p) { return p.slice(p.lastIndexOf('/') + 1); }
+// 规范化相对路径；拒绝跳出仓库的 ..
+function normRel(p) {
+  const out = [];
+  for (const seg of String(p || '').replace(/\\/g, '/').split('/')) {
+    if (!seg || seg === '.') continue;
+    if (seg === '..') { if (!out.length) return null; out.pop(); } else out.push(seg);
+  }
+  return out.join('/');
+}
 
 function splitFrontmatter(text) {
   if (!text.startsWith('---')) return { fm: null, body: text, fmText: '' };
   const m = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|$)/.exec(text);
   if (!m) return { fm: null, body: text, fmText: '' };
   let fm = null;
-  try { fm = yaml.load(m[1]) || {}; } catch { fm = {}; }
+  try { fm = deps.yaml.load(m[1]) || {}; } catch { fm = {}; }
   if (typeof fm !== 'object' || Array.isArray(fm)) fm = {};
   return { fm, body: text.slice(m[0].length), fmText: m[1] };
 }
@@ -50,9 +57,10 @@ function parseNote(text) {
 }
 
 class Vault {
-  constructor(root) {
-    this.root = path.resolve(root);
-    this.name = path.basename(this.root);
+  constructor(fsx) {
+    this.fs = fsx;
+    this.root = fsx.root;
+    this.name = fsx.name;
     this.files = new Map();      // rel -> entry
     this.byName = new Map();     // lower name -> Set(rel)   md: 不含扩展名; 其他: 含扩展名
     this.backlinks = new Map();  // rel -> Set(sourceRel)
@@ -60,41 +68,27 @@ class Vault {
     this.folderCounts = new Map();
     this.status = { state: 'idle', done: 0, total: 0, startedAt: 0, ms: 0 };
     this.version = 0;
-    this.watcher = null;
+    this.unwatch = null;
   }
 
-  abs(rel) {
-    const p = path.resolve(this.root, rel || '');
-    if (p !== this.root && !p.startsWith(this.root + path.sep)) throw Object.assign(new Error('路径越界'), { status: 400 });
-    return p;
+  rel(p) {
+    const r = normRel(p);
+    if (r === null) throw Object.assign(new Error('路径越界'), { status: 400 });
+    return r;
   }
 
   // ---------- 索引 ----------
   async build() {
     this.status = { state: 'scanning', done: 0, total: 0, startedAt: Date.now(), ms: 0 };
     this.files.clear(); this.byName.clear(); this.backlinks.clear(); this.unresolved.clear();
-    const list = [];
-    const walk = async (dir) => {
-      let ents;
-      try { ents = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
-      const subs = [];
-      for (const e of ents) {
-        if (e.name.startsWith('.') && e.isDirectory()) continue;
-        if (IGNORE_DIRS.has(e.name)) continue;
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) subs.push(walk(full));
-        else if (e.isFile()) list.push(full);
-      }
-      await Promise.all(subs);
-    };
-    await walk(this.root);
+    const list = await this._walk();
     this.status.state = 'indexing';
     this.status.total = list.length;
     let i = 0;
     const worker = async () => {
       while (i < list.length) {
-        const full = list[i++];
-        try { await this._indexFile(full); } catch { /* 跳过无法读取的文件 */ }
+        const rel = list[i++];
+        try { await this._indexFile(rel); } catch { /* 跳过无法读取的文件 */ }
         this.status.done++;
       }
     };
@@ -107,15 +101,36 @@ class Vault {
     this._watch();
   }
 
-  async _indexFile(full, stat) {
-    const rel = toPosix(path.relative(this.root, full));
-    stat = stat || await fsp.stat(full);
-    const fname = rel.slice(rel.lastIndexOf('/') + 1);
+  // 列出仓库里所有文件（跳过隐藏文件夹和 IGNORE_DIRS）
+  async _walk() {
+    const list = [];
+    const walk = async (dir) => {
+      let ents;
+      try { ents = await this.fs.readdir(dir); } catch { return; }
+      const subs = [];
+      for (const e of ents) {
+        if (e.name.startsWith('.') && e.dir) continue;
+        if (IGNORE_DIRS.has(e.name)) continue;
+        const rel = dir ? dir + '/' + e.name : e.name;
+        if (e.dir) subs.push(walk(rel));
+        else list.push(rel);
+      }
+      await Promise.all(subs);
+    };
+    await walk('');
+    return list;
+  }
+
+  async _readText(rel, st) { return st?.blob ? st.blob.text() : this.fs.readText(rel); }
+
+  async _indexFile(rel, stat) {
+    stat = stat || await this.fs.stat(rel);
+    const fname = fileOf(rel);
     const ext = extOf(fname);
-    const entry = { path: rel, ext, size: stat.size, mtime: stat.mtimeMs, ctime: stat.birthtimeMs || stat.ctimeMs };
+    const entry = { path: rel, ext, size: stat.size, mtime: stat.mtime, ctime: stat.ctime };
     if (MD_EXT.has(ext)) {
       entry.name = baseOf(fname);
-      const text = await fsp.readFile(full, 'utf8');
+      const text = await this._readText(rel, stat);
       const parsed = parseNote(text);
       entry.content = text;
       entry.fm = parsed.fm;
@@ -123,6 +138,7 @@ class Vault {
       entry.links = parsed.links;
     } else {
       entry.name = fname;
+      if (stat.blob) entry.blob = stat.blob;   // 浏览器：附件直接生成 blob: 地址
     }
     const old = this.files.get(rel);
     if (old) this._unname(old);
@@ -161,7 +177,7 @@ class Vault {
       const tries = [t, t + '.md'];
       for (const c of tries) if (this.files.has(c)) return c;
       if (from) {
-        const rel = path.posix.normalize(path.posix.join(dirOf(from), t));
+        const rel = normRel(dirOf(from) + '/' + t);
         for (const c of [rel, rel + '.md']) if (this.files.has(c)) return c;
       }
       t = t.slice(t.lastIndexOf('/') + 1);
@@ -214,16 +230,14 @@ class Vault {
   }
 
   // 文件变化后增量更新
-  async refresh(rel) {
-    const full = this.abs(rel);
+  async refresh(rel, st) {
     const old = this.files.get(rel);
-    let st = null;
-    try { st = await fsp.stat(full); } catch { }
+    if (!st) try { st = await this.fs.stat(rel); } catch { st = null; }
     if (old && old.ext === 'md') this._removeLinks(old);
-    if (!st || !st.isFile()) {
+    if (!st || !st.file) {
       if (old) { this._unname(old); this.files.delete(rel); }
     } else {
-      const e = await this._indexFile(full, st);
+      const e = await this._indexFile(rel, st);
       if (e.ext === 'md') {
         this._addLinks(e);
         // 之前未解析、现在能解析的链接
@@ -240,39 +254,57 @@ class Vault {
     this.version++;
   }
 
+  // 监听外部修改（桌面版 Obsidian 同时在改）：适配器支持 watch 时实时更新，否则由宿主调用 rescan()
   _watch() {
-    if (this.watcher) return;
+    if (this.unwatch || !this.fs.watch) return;
     const pending = new Map();
-    try {
-      this.watcher = fs.watch(this.root, { recursive: true }, (ev, fname) => {
-        if (!fname) return;
-        const rel = toPosix(fname);
-        if (rel.split('/').some(seg => seg.startsWith('.') || IGNORE_DIRS.has(seg))) return;
-        clearTimeout(pending.get(rel));
-        pending.set(rel, setTimeout(() => {
-          pending.delete(rel);
-          if (this.selfWrites.has(rel)) { this.selfWrites.delete(rel); return; }
-          fsp.stat(this.abs(rel)).then(st => {
-            if (st.isDirectory()) return this._rebuildCounts();
-            return this.refresh(rel);
-          }, () => this.refresh(rel)).catch(() => { });
-        }, 300));
-      });
-    } catch { this.watcher = null; }
+    this.unwatch = this.fs.watch(rel => {
+      if (rel.split('/').some(seg => seg.startsWith('.') || IGNORE_DIRS.has(seg))) return;
+      clearTimeout(pending.get(rel));
+      pending.set(rel, setTimeout(() => {
+        pending.delete(rel);
+        if (this.selfWrites.has(rel)) { this.selfWrites.delete(rel); return; }
+        this.fs.stat(rel).then(st => {
+          if (st.dir) return this._rebuildCounts();
+          return this.refresh(rel, st);
+        }, () => this.refresh(rel)).catch(() => { });
+      }, 300));
+    });
   }
   selfWrites = new Set();
-  close() { try { this.watcher?.close(); } catch { } this.watcher = null; }
+  close() { try { this.unwatch?.(); } catch { } this.unwatch = null; }
+
+  // 全量比对修改时间，增量更新变化的文件；返回变化的文件数
+  async rescan() {
+    if (this.status.state !== 'ready') return 0;
+    const list = await this._walk();
+    const seen = new Set(list);
+    let changed = 0, i = 0;
+    const worker = async () => {
+      while (i < list.length) {
+        const rel = list[i++];
+        let st;
+        try { st = await this.fs.stat(rel); } catch { continue; }
+        const old = this.files.get(rel);
+        if (old && old.mtime === st.mtime && old.size === st.size) continue;
+        await this.refresh(rel, st); changed++;
+      }
+    };
+    await Promise.all(Array.from({ length: 48 }, worker));
+    for (const rel of [...this.files.keys()]) if (!seen.has(rel)) { await this.refresh(rel); changed++; }
+    return changed;
+  }
 
   // ---------- 读取 ----------
   async list(dir, offset = 0, limit = 400) {
-    const full = this.abs(dir);
-    const ents = await fsp.readdir(full, { withFileTypes: true });
+    dir = this.rel(dir);
+    const ents = await this.fs.readdir(dir);
     const folders = [], files = [];
     for (const e of ents) {
       if (e.name.startsWith('.') || IGNORE_DIRS.has(e.name)) continue;
       const rel = dir ? dir + '/' + e.name : e.name;
-      if (e.isDirectory()) folders.push({ name: e.name, path: rel, count: this.folderCounts.get(rel) ?? null });
-      else if (e.isFile()) files.push({ name: e.name, path: rel, ext: extOf(e.name) });
+      if (e.dir) folders.push({ name: e.name, path: rel, count: this.folderCounts.get(rel) ?? null });
+      else files.push({ name: e.name, path: rel, ext: extOf(e.name) });
     }
     folders.sort((a, b) => collator.compare(a.name, b.name));
     files.sort((a, b) => collator.compare(a.name, b.name));
@@ -280,43 +312,42 @@ class Vault {
   }
 
   async read(rel) {
-    const full = this.abs(rel);
-    const st = await fsp.stat(full);
-    const text = await fsp.readFile(full, 'utf8');
-    return { path: rel, content: text, mtime: st.mtimeMs };
+    rel = this.rel(rel);
+    const st = await this.fs.stat(rel);
+    const text = await this._readText(rel, st);
+    return { path: rel, content: text, mtime: st.mtime };
   }
 
   async write(rel, content) {
-    const full = this.abs(rel);
-    await fsp.mkdir(path.dirname(full), { recursive: true });
+    rel = this.rel(rel);
     this.selfWrites.add(rel);
-    await fsp.writeFile(full, content, 'utf8');
-    await this.refresh(rel);
-    const st = await fsp.stat(full);
-    return { path: rel, mtime: st.mtimeMs };
+    await this.fs.writeText(rel, content);
+    const st = await this.fs.stat(rel);
+    await this.refresh(rel, st);
+    return { path: rel, mtime: st.mtime };
   }
 
   async writeBinary(rel, buf) {
-    const full = this.abs(rel);
-    await fsp.mkdir(path.dirname(full), { recursive: true });
+    rel = this.rel(rel);
     this.selfWrites.add(rel);
-    await fsp.writeFile(full, buf);
+    await this.fs.writeBinary(rel, buf);
     await this.refresh(rel);
     return { path: rel };
   }
 
-  async mkdir(rel) { await fsp.mkdir(this.abs(rel), { recursive: true }); this._rebuildCounts(); this.version++; }
+  async exists(rel) { return this.fs.exists(this.rel(rel)); }
+
+  async mkdir(rel) { await this.fs.mkdir(this.rel(rel)); this._rebuildCounts(); this.version++; }
 
   // 删除 = 移到仓库内 .trash（与 Obsidian "trashOption: local" 一致）
   async trash(rel) {
-    const full = this.abs(rel);
-    const st = await fsp.stat(full);
-    const dest = path.join(this.root, '.trash', path.basename(full));
-    await fsp.mkdir(path.dirname(dest), { recursive: true });
-    let target = dest, n = 1;
-    while (fs.existsSync(target)) { const e = path.extname(dest); target = dest.slice(0, dest.length - e.length) + ` ${n++}` + e; }
-    await fsp.rename(full, target);
-    if (st.isDirectory()) {
+    rel = this.rel(rel);
+    const st = await this.fs.stat(rel);
+    const name = fileOf(rel), ext = st.dir || !extOf(name) ? '' : '.' + name.slice(name.lastIndexOf('.') + 1);
+    let target = '.trash/' + name, n = 1;
+    while (await this.fs.exists(target)) target = '.trash/' + name.slice(0, name.length - ext.length) + ` ${n++}` + ext;
+    await this.fs.move(rel, target);
+    if (st.dir) {
       for (const k of [...this.files.keys()]) if (k === rel || k.startsWith(rel + '/')) await this.refresh(k);
     } else await this.refresh(rel);
     this._rebuildCounts();
@@ -324,14 +355,13 @@ class Vault {
 
   // 重命名 / 移动，并更新其他笔记里的双链
   async rename(from, to) {
-    const src = this.abs(from), dst = this.abs(to);
-    if (fs.existsSync(dst)) throw Object.assign(new Error('目标已存在'), { status: 409 });
-    const st = await fsp.stat(src);
+    from = this.rel(from); to = this.rel(to);
+    if (await this.fs.exists(to)) throw Object.assign(new Error('目标已存在'), { status: 409 });
+    const st = await this.fs.stat(from);
     const entry = this.files.get(from);
     const sources = entry ? [...(this.backlinks.get(from) || [])] : [];
-    await fsp.mkdir(path.dirname(dst), { recursive: true });
-    await fsp.rename(src, dst);
-    if (st.isDirectory()) {
+    await this.fs.move(from, to);
+    if (st.dir) {
       for (const k of [...this.files.keys()]) {
         if (k.startsWith(from + '/')) { await this.refresh(k); await this.refresh(to + k.slice(from.length)); }
       }
@@ -540,4 +570,4 @@ class Vault {
   }
 }
 
-module.exports = { Vault, splitFrontmatter, parseNote, extOf, baseOf, dirOf, TEXT_EXT, collator };
+export { Vault, splitFrontmatter, parseNote, extOf, baseOf, dirOf, normRel, TEXT_EXT, collator };
